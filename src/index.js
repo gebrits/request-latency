@@ -12,15 +12,17 @@ const elapsed = require('@f/elapsed-time')
  * Request latency
  */
 
-const latency = co.wrap(function *(url, n) {
+const latency = co.wrap(function* (url, n = 50, sleepMs = 30) {
+
+  console.log(`n = ${n} / sleep = ${sleepMs}`);
+
   const times = []
-  n = n || 50
 
   for (var i = 0; i < n; i++) {
     var t = elapsed()
     yield axios(url)
     times.push(t())
-    yield sleep(30)
+    yield sleep(sleepMs)
   }
 
   const sigma = sd(times)
@@ -41,21 +43,21 @@ const latency = co.wrap(function *(url, n) {
  * Helpers
  */
 
-function mean (list) {
+function mean(list) {
   return list.reduce((acc, item) => acc + item, 0) / list.length
 }
 
-function p95 (mu, sigma) {
+function p95(mu, sigma) {
   const z = 1.645
   return percentile(z, mu, sigma)
 }
 
-function p99 (mu, sigma) {
+function p99(mu, sigma) {
   const z = 2.326
   return percentile(z, mu, sigma)
 }
 
-function percentile (z, mu, sigma) {
+function percentile(z, mu, sigma) {
   return z * sigma + mu
 }
 
