@@ -2,42 +2,75 @@
  * Imports
  */
 
-const co = require('co')
 const sd = require('stdev')
-const axios = require('axios')
 const sleep = require('@f/sleep')
 const elapsed = require('@f/elapsed-time')
+const rp = require('request-promise');
+
 
 /**
  * Request latency
  */
 
-const latency = co.wrap(function* (url, n = 50, sleepMs = 30) {
+function latency(url, n = 50, sleepMs = 30) {
 
   console.log(`n = ${n} / sleep = ${sleepMs}`);
 
   const times = []
 
-  for (var i = 0; i < n; i++) {
-    var t = elapsed()
-    yield axios(url)
-    times.push(t())
-    yield sleep(sleepMs)
+  function onDone() {
+    const sigma = sd(times)
+    const mu = mean(times)
+
+    return {
+      url,
+      count: n,
+      times,
+      mean: mu,
+      sd: sigma,
+      p95: p95(mu, sigma),
+      p99: p99(mu, sigma)
+    }
   }
 
-  const sigma = sd(times)
-  const mu = mean(times)
+  return new Promise((resolve, reject) => {
 
-  return {
-    url,
-    count: n,
-    times,
-    mean: mu,
-    sd: sigma,
-    p95: p95(mu, sigma),
-    p99: p99(mu, sigma)
-  }
-})
+    let counterDone = 0;
+
+    for (var i = 0; i < n; i++) {
+
+      setTimeout(() => {
+
+        const t = elapsed();
+
+        rp(url).then(({ serverTime }) => {
+
+          times.push(t());
+
+          if (++counterDone === n) {
+
+            const sigma = sd(times)
+            const mu = mean(times)
+
+            resolve({
+              url,
+              count: n,
+              times,
+              mean: mu,
+              sd: sigma,
+              p95: p95(mu, sigma),
+              p99: p99(mu, sigma)
+            });
+          }
+
+        });
+
+      }, i * sleepMs);
+
+    }
+  })
+}
+
 
 /**
  * Helpers

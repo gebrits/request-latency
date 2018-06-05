@@ -10,7 +10,7 @@ var latency = require('..')
  * Argument parsing
  */
 
-var args = process.argv.slice(3)
+var args = process.argv.slice(2)
 var url = args[0]
 var count = 50
 var sleepN = 30;
@@ -29,7 +29,7 @@ if (args[2]) {
  * Execute the requests
  */
 
-latency(url, count).then(print)
+latency(url, count, sleepN).then(print)
 
 /**
  * Helpers
