@@ -2,6 +2,8 @@
  * Imports
  */
 
+require('http').globalAgent.maxSockets = Infinity;
+
 const sd = require('stdev')
 const sleep = require('@f/sleep')
 const elapsed = require('@f/elapsed-time')
