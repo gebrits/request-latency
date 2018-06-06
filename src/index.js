@@ -78,6 +78,8 @@ function latency(url, n, sleepMs, keepAlive) {
                 times,
                 mean: mu,
                 sd: sigma,
+                p10: p10(mu, sigma),
+                p50: p50(mu, sigma),
                 p95: p95(mu, sigma),
                 p99: p99(mu, sigma)
               });
@@ -94,7 +96,9 @@ function latency(url, n, sleepMs, keepAlive) {
       console.log('Url:', results.url)
       console.log('Request count:', results.count)
       console.log('Average:', results.mean)
+      console.log('Median:', results.p50)
       console.log('Standard deviation:', results.sd)
+      console.log('10th percentile:', results.p10)
       console.log('95th percentile:', results.p95)
       console.log('99th percentile:', results.p99)
     })
@@ -145,6 +149,16 @@ function oneReq(url) {
 
 function mean(list) {
   return list.reduce((acc, item) => acc + item, 0) / list.length
+}
+
+function p50(mu, sigma) {
+  const z = 0
+  return percentile(z, mu, sigma)
+}
+
+function p10(mu, sigma) {
+  const z = -1.28155
+  return percentile(z, mu, sigma)
 }
 
 function p95(mu, sigma) {
