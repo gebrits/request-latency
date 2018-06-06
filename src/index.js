@@ -106,9 +106,16 @@ function oneReq(url) {
 
   request({
     url: url,
-    time: true
+    time: true,
+    headers: {
+      Referer: 'http://api.binance.com/api/v1/time'
+    }
   }, (err, resp, body) => {
 
+    if (err) {
+      console.log("err", err)
+      return;
+    }
     const stop = new Date().getTime();
 
     const timingsPartial = _.pick(resp, timingParams);
@@ -124,6 +131,11 @@ function oneReq(url) {
 
     console.log("##############");
     console.log(timings);
+    console.log("ACTUAL URL", resp.request.uri);
+    console.log("resp headers", resp.headers);
+    // console.log("req headers", resp.request.headers);
+
+    console.log("BODY", body);
   });
 }
 
