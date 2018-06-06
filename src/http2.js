@@ -10,34 +10,26 @@ const sd = require('stdev')
 const request = require('request');
 const _ = require("lodash");
 const argv = require("yargs").argv;
+const URL = require("url");
 
-/**
- * Request latency
- */
+const url = URL.parse(argv.url || "");
 
-if (!argv.url) {
-  throw new Error("--url not defined")
+if (!url.host) {
+  throw new Error("--url is required and should be a valid Url")
 }
 
-
-if (argv.single) {
-  oneReq(argv.url);
-} else {
-  latency(argv.url, +argv.n || 50, +argv.sleep || 50, argv.keepAlive == "true");
-}
-
-const timingParams = ["timingStart", "timingPhases"]; //"timings" = accumulated timingPhases
-
-const client = http2.connect(`https://api.binance.com`, {
-  settings: {
-    maxConcurrentStreams: 1024
-  }
-});
-client.on('error', (err) => console.error(err));
+latency(url, +argv.n || 50, +argv.sleep || 50, argv.keepAlive == "true");
 
 function latency(url, n, sleepMs, keepAlive) {
 
   console.log(`url = ${url} / n = ${n} / sleep = ${sleepMs} / keepAlive = ${keepAlive}`);
+
+  const client = http2.connect(`${url.protocol}//${url.host}`, {
+    settings: {
+      maxConcurrentStreams: 1024
+    }
+  });
+  client.on('error', (err) => console.error(err));
 
   const times = []
 
@@ -52,7 +44,7 @@ function latency(url, n, sleepMs, keepAlive) {
 
           const start = process.hrtime();
 
-          const req = client.request({ ':path': `/api/v1/depth?limit=5&symbol=ETHBTC` });
+          const req = client.request({ ':path': url.path });
           req.on('response', (headers, flags) => {
 
             let data = '';
@@ -106,45 +98,6 @@ function latency(url, n, sleepMs, keepAlive) {
       console.log('99th percentile:', results.p99)
       console.log("errors", nrErrors)
     })
-}
-
-function oneReq(url) {
-
-  const start = new Date().getTime();
-
-  request({
-    url: url,
-    time: true,
-    headers: {
-      Referer: 'http://api.binance.com/api/v1/time'
-    }
-  }, (err, resp, body) => {
-
-    if (err) {
-      console.log("err", err)
-      return;
-    }
-    const stop = new Date().getTime();
-
-    const timingsPartial = _.pick(resp, timingParams);
-
-    const timings = _.extend({
-      startClient: start,
-      startClientDelta: timingsPartial.timingStart - start
-    }, timingsPartial, {
-      stopClient: stop
-    });
-
-    timings.stopClientDelta = timings.stopClient - timings.timingStart - timings.timingPhases.total
-
-    console.log("##############");
-    console.log(timings);
-    console.log("ACTUAL URL", resp.request.uri);
-    console.log("resp headers", resp.headers);
-    // console.log("req headers", resp.request.headers);
-
-    console.log("BODY", body);
-  });
 }
 
 /**
