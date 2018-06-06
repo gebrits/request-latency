@@ -37,7 +37,7 @@ function latency(url, n = 50, sleepMs = 30) {
     }
   }
 
-  const timingParams = ["timingStart", "timings", "timingPhases"];
+  const timingParams = ["timingStart", "timingPhases"]; //"timings" = accumulated timingPhases
 
   return new Promise((resolve, reject) => {
 
@@ -58,9 +58,16 @@ function latency(url, n = 50, sleepMs = 30) {
 
           times.push(t());
 
-          const timings = _.pick(resp, timingParams);
-          timings.startClient = start;
-          timings.stopClient = new Date().getTime();
+          const timingsPartial = _.pick(resp, timingParams);
+
+          const timings = _.extend({
+            startClient: start,
+            startClientDelta: timingsPartial.timingStart - start
+          }, timingsPartial, {
+            stopClient: new Date().getTime()
+          });
+
+          timings.stopClientDelta = timings.stopClient - timings.timingStart - timings.timingPhases.total
 
           console.log("##############");
           console.log(timings);
