@@ -9,8 +9,6 @@
     "latency": "bin/latency.js"
   },
   "dependencies": {
-    "@f/elapsed-time": "^1.0.0",
-    "@f/sleep": "^1.0.0",
     "lodash": "^4.17.10",
     "request": "^2.87.0",
     "request-promise": "^4.2.2",
