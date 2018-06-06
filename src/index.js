@@ -80,11 +80,16 @@ function latency(url, n, sleepMs, keepAlive) {
       }
     })
     .then(results => {
+
+      const sortedTimes = times.sort();
+      const median = sortedTimes[Math.ceil(sortedTimes.length / 2)];
+
       console.log("#########################");
       console.log('Url:', results.url)
       console.log('Request count:', results.count)
       console.log('Average:', results.mean)
-      console.log('Median:', results.p50)
+      // console.log('Median:', results.p50)
+      console.log("Real Median grr", median)
       console.log('Standard deviation:', results.sd)
       console.log('10th percentile:', results.p10)
       console.log('95th percentile:', results.p95)
