@@ -47,7 +47,7 @@ function latency(url, n, sleepMs, keepAlive) {
           const req = client.request({ ':path': url.path });
           req.on('response', (headers, flags) => {
 
-            console.log("req.socket.localAddress", client.socket.localAddress);
+            // console.log("req.socket.localAddress", client.socket.localAddress);
 
             let data = '';
             req.on('data', chunk => { data += chunk; })
