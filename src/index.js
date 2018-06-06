@@ -8,7 +8,8 @@ require('https').globalAgent.maxSockets = Infinity;
 const sd = require('stdev')
 const sleep = require('@f/sleep')
 const elapsed = require('@f/elapsed-time')
-const rp = require('request-promise');
+const request = require('request');
+const _ = require("lodash");
 
 
 /**
@@ -36,6 +37,8 @@ function latency(url, n = 50, sleepMs = 30) {
     }
   }
 
+  const timingParams = ["timingStart", "timings", "timingPhases"];
+
   return new Promise((resolve, reject) => {
 
     let counterDone = 0;
@@ -46,9 +49,21 @@ function latency(url, n = 50, sleepMs = 30) {
 
         const t = elapsed();
 
-        rp(url).then(({ serverTime }) => {
+        const start = new Date().getTime();
+
+        request({
+          url: url,
+          time: true
+        }, (err, resp, body) => {
 
           times.push(t());
+
+          const timings = _.pick(resp, timingParams);
+          timings.startClient = start;
+          timings.stopClient = new Date().getTime();
+
+          console.log("##############");
+          console.log(timings);
 
           if (++counterDone === n) {
 
@@ -66,7 +81,7 @@ function latency(url, n = 50, sleepMs = 30) {
             });
           }
 
-        });
+        })
 
       }, i * sleepMs);
 
