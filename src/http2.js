@@ -79,7 +79,6 @@ function latency(url, n, sleepMs, keepAlive) {
                 const now = new Date().getTime();
                 const nowOnServer = JSON.parse(data).serverTime;
 
-                console.log(data);
                 console.log("took (ms)", tookMS, now - nowOnServer);
 
                 times.push(tookMS);
