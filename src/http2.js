@@ -60,6 +60,10 @@ function latency(url, n, sleepMs, keepAlive) {
                 // 3. actually log MB/sec
                 // 4. stat nr 1/2/3/4/5 per opportunity
                 //   - also. If [10-20]ms -> For each: how often would we be 1/2/3/4/5 (distribition + avg)
+                // 5. actually get responses that got some time in them so we might deduce what the actual lag is instead of purely going from the 15ms
+                //   - logical to use the time endpoint.
+                //   -> assuming time is the same (make sure to sync our time with AWS atomic clock): 
+                //   -> (client time on receive - time displayed) = stalesness lag.
                 // 
                 // Stats: 
                 // 15 MS for depthbook (network roundtrip)
@@ -67,9 +71,17 @@ function latency(url, n, sleepMs, keepAlive) {
                 // 3MS to place order (network 1 way)
 
                 const endHR = process.hrtime(start);
+                const tookMS = Math.round(((endHR[0] * 10 ^ 9) + endHR[1]) / 1000000); //from nano to milli 
 
-                const tookMS = ((endHR[0] * 10 ^ 9) + endHR[1]) / 1000000; //from nano to milli 
-                console.log("took (ms)", tookMS);
+                //Assuming both servers are synced, the time response received at client - time reported on server at time of processing => staleness of data in millis
+                //This is a far better measure of checking how accurate the data is. In fact we don't care much how long the request takes before it's being processed by the binance-servers
+                //as this doesn't change the staleness of the data.
+                const now = new Date().getTime();
+                const nowOnServer = JSON.parse(data).serverTime;
+
+                console.log(data);
+                console.log("took (ms)", tookMS, now - nowOnServer);
+
                 times.push(tookMS);
 
                 if (++counterDone === n) {
