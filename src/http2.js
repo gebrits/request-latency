@@ -5,6 +5,7 @@
 require('http').globalAgent.maxSockets = Infinity;
 require('https').globalAgent.maxSockets = Infinity;
 
+const http2 = require('http2');
 const sd = require('stdev')
 const request = require('request');
 const _ = require("lodash");
@@ -22,10 +23,17 @@ if (!argv.url) {
 if (argv.single) {
   oneReq(argv.url);
 } else {
-  latency(argv.url, +argv.n || 50, +argv.sleep || 30, argv.keepAlive == "true");
+  latency(argv.url, +argv.n || 50, +argv.sleep || 50, argv.keepAlive == "true");
 }
 
 const timingParams = ["timingStart", "timingPhases"]; //"timings" = accumulated timingPhases
+
+const client = http2.connect(`https://api.binance.com`, {
+  settings: {
+    maxConcurrentStreams: 1024
+  }
+});
+client.on('error', (err) => console.error(err));
 
 function latency(url, n, sleepMs, keepAlive) {
 
@@ -42,44 +50,41 @@ function latency(url, n, sleepMs, keepAlive) {
 
         setTimeout(() => {
 
-          request2({
-            url: url,
-            time: true,
-            forever: keepAlive
-          }, (err, resp, body) => {
+          const start = process.hrtime();
 
-            if (err || resp.statusCode !== 200) {
+          const req = client.request({ ':path': `/api/v1/depth?limit=5&symbol=ETHBTC` });
+          req.on('response', (headers, flags) => {
 
-              nrErrors++;
+            let data = '';
+            req.on('data', chunk => { data += chunk; })
+              .on('end', () => {
 
-            } else {
+                const endHR = process.hrtime(start);
 
-              const timings = _.pick(resp, timingParams);
-              times.push(timings.timingPhases.total);
+                const tookMS = ((endHR[0] * 10 ^ 9) + endHR[1]) / 1000000; //from nano to milli 
+                console.log("took (ms)", tookMS);
+                times.push(tookMS);
 
-              console.log("##############");
-              console.log(timings);
-            }
+                if (++counterDone === n) {
+                  client.destroy(); // try remove this line see what changed?
 
-            if (++counterDone === n) {
+                  const sigma = sd(times)
+                  const mu = mean(times)
 
-              const sigma = sd(times)
-              const mu = mean(times)
-
-              resolve({
-                url,
-                count: n,
-                times,
-                mean: mu,
-                sd: sigma,
-                p10: p10(mu, sigma),
-                p50: p50(mu, sigma),
-                p95: p95(mu, sigma),
-                p99: p99(mu, sigma)
+                  resolve({
+                    url,
+                    count: n,
+                    times,
+                    mean: mu,
+                    sd: sigma,
+                    p10: p10(mu, sigma),
+                    p50: p50(mu, sigma),
+                    p95: p95(mu, sigma),
+                    p99: p99(mu, sigma)
+                  });
+                }
               });
-            }
-
-          })
+          });
 
         }, i * sleepMs);
 
