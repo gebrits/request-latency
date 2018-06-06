@@ -11,53 +11,6 @@ const elapsed = require('@f/elapsed-time')
 const rp = require('request-promise');
 
 
-
-// var http = require('http'),
-//   start = timestamp();
-
-// var options =   {
-//       hostname: 'www.google.co.uk',
-//       port: 80,
-//       path: '/',
-//       method: 'GET'
-//     };
-
-// for(var i = 0; i<25; i++) {
-//   var req = http.get(options, function(res) {  
-//     res.on('data', function(chunk) {  
-//     });   
-//   }).on('socket', function(e) {  
-//      console.log("Socket to Google",timestamp() - start);  
-//   });
-// }   
-
-// Socket to Google 0.02200007438659668
-// Socket to Google 0.024000167846679688
-// Socket to Google 0.024000167846679688
-// Socket to Google 0.024000167846679688
-// Socket to Google 0.024000167846679688
-// Socket to Google 0.1360001564025879
-// Socket to Google 0.14300012588500977
-// Socket to Google 0.16000008583068848
-// Socket to Google 0.16000008583068848
-// Socket to Google 0.16100001335144043
-// Socket to Google 0.21700000762939453
-// Socket to Google 0.21800017356872559
-// Socket to Google 0.23200011253356934
-// Socket to Google 0.2330000400543213
-// Socket to Google 0.23600006103515625
-// Socket to Google 0.2740001678466797
-// Socket to Google 0.27500009536743164
-// Socket to Google 0.2850000858306885
-// Socket to Google 0.2910001277923584
-// Socket to Google 0.312000036239624
-// Socket to Google 0.38000011444091797
-// Socket to Google 0.3900001049041748
-// Socket to Google 0.3970000743865967
-// Socket to Google 0.39800000190734863
-// Socket to Google 0.3990001678466797 
-
-
 /**
  * Request latency
  */
