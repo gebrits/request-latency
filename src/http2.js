@@ -25,7 +25,7 @@ function latency(url, n, sleepMs, keepAlive) {
   console.log(`url = ${url} / n = ${n} / sleep = ${sleepMs} / keepAlive = ${keepAlive}`);
 
   const client = http2.connect(`${url.protocol}//${url.host}`, {
-    localAddress: "192.168.178.150" //YEAH
+    // localAddress: "192.168.178.150" //YEAH
   });
   client.on('error', (err) => console.error(err));
 
