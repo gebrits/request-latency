@@ -6,96 +6,127 @@ require('http').globalAgent.maxSockets = Infinity;
 require('https').globalAgent.maxSockets = Infinity;
 
 const sd = require('stdev')
-const sleep = require('@f/sleep')
 const elapsed = require('@f/elapsed-time')
 const request = require('request');
 const _ = require("lodash");
-
+const argv = require("yargs").argv;
 
 /**
  * Request latency
  */
 
-function latency(url, n = 50, sleepMs = 30) {
+if (!argv.url) {
+  throw new Error("--url not defined")
+}
 
-  console.log(`n = ${n} / sleep = ${sleepMs}`);
+
+if (argv.single) {
+  oneReq(argv.url);
+} else {
+  latency(argv.url, +argv.n || 50, +argv.sleep || 30, argv.keepAlive == "true");
+}
+
+const timingParams = ["timingStart", "timingPhases"]; //"timings" = accumulated timingPhases
+
+function latency(url, n, sleepMs, keepAlive) {
+
+  console.log(`url = ${url} / n = ${n} / sleep = ${sleepMs} / keepAlive = ${keepAlive}`);
 
   const times = []
 
-  function onDone() {
-    const sigma = sd(times)
-    const mu = mean(times)
+  new Promise((resolve, reject) => {
 
-    return {
-      url,
-      count: n,
-      times,
-      mean: mu,
-      sd: sigma,
-      p95: p95(mu, sigma),
-      p99: p99(mu, sigma)
-    }
-  }
+      let counterDone = 0;
 
-  const timingParams = ["timingStart", "timingPhases"]; //"timings" = accumulated timingPhases
+      for (var i = 0; i < n; i++) {
 
-  return new Promise((resolve, reject) => {
+        setTimeout(() => {
 
-    let counterDone = 0;
+          const start = new Date().getTime();
 
-    for (var i = 0; i < n; i++) {
+          request({
+            url: url,
+            time: true,
+            forever: keepAlive
+          }, (err, resp, body) => {
 
-      setTimeout(() => {
+            const stop = new Date().getTime();
 
-        const t = elapsed();
+            times.push(stop - start);
 
-        const start = new Date().getTime();
+            const timingsPartial = _.pick(resp, timingParams);
 
-        request({
-          url: url,
-          time: true
-        }, (err, resp, body) => {
-
-          times.push(t());
-
-          const timingsPartial = _.pick(resp, timingParams);
-
-          const timings = _.extend({
-            startClient: start,
-            startClientDelta: timingsPartial.timingStart - start
-          }, timingsPartial, {
-            stopClient: new Date().getTime()
-          });
-
-          timings.stopClientDelta = timings.stopClient - timings.timingStart - timings.timingPhases.total
-
-          console.log("##############");
-          console.log(timings);
-
-          if (++counterDone === n) {
-
-            const sigma = sd(times)
-            const mu = mean(times)
-
-            resolve({
-              url,
-              count: n,
-              times,
-              mean: mu,
-              sd: sigma,
-              p95: p95(mu, sigma),
-              p99: p99(mu, sigma)
+            const timings = _.extend({
+              startClient: start,
+              startClientDelta: timingsPartial.timingStart - start
+            }, timingsPartial, {
+              stopClient: stop
             });
-          }
 
-        })
+            timings.stopClientDelta = timings.stopClient - timings.timingStart - timings.timingPhases.total
 
-      }, i * sleepMs);
+            console.log("##############");
+            console.log(timings);
 
-    }
-  })
+            if (++counterDone === n) {
+
+              const sigma = sd(times)
+              const mu = mean(times)
+
+              resolve({
+                url,
+                count: n,
+                times,
+                mean: mu,
+                sd: sigma,
+                p95: p95(mu, sigma),
+                p99: p99(mu, sigma)
+              });
+            }
+
+          })
+
+        }, i * sleepMs);
+
+      }
+    })
+    .then(results => {
+      console.log("#########################");
+      console.log('Url:', results.url)
+      console.log('Request count:', results.count)
+      console.log('Average:', results.mean)
+      console.log('Standard deviation:', results.sd)
+      console.log('95th percentile:', results.p95)
+      console.log('99th percentile:', results.p99)
+    })
 }
 
+function oneReq(url) {
+
+  const start = new Date().getTime();
+
+  request({
+    url: url,
+    time: true
+  }, (err, resp, body) => {
+
+    const stop = new Date().getTime();
+
+    const timingsPartial = _.pick(resp, timingParams);
+
+    const timings = _.extend({
+      startClient: start,
+      startClientDelta: timingsPartial.timingStart - start
+    }, timingsPartial, {
+      stopClient: stop
+    });
+
+    timings.stopClientDelta = timings.stopClient - timings.timingStart - timings.timingPhases.total
+
+    console.log("##############");
+    console.log(timings);
+  });
+}
 
 /**
  * Helpers
