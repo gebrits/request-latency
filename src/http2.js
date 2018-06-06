@@ -25,9 +25,7 @@ function latency(url, n, sleepMs, keepAlive) {
   console.log(`url = ${url} / n = ${n} / sleep = ${sleepMs} / keepAlive = ${keepAlive}`);
 
   const client = http2.connect(`${url.protocol}//${url.host}`, {
-    settings: {
-      maxConcurrentStreams: 1024
-    }
+    localAddress: "192.168.178.150" //YEAH
   });
   client.on('error', (err) => console.error(err));
 
@@ -47,11 +45,26 @@ function latency(url, n, sleepMs, keepAlive) {
           const req = client.request({ ':path': url.path });
           req.on('response', (headers, flags) => {
 
-            // console.log("req.socket.localAddress", client.socket.localAddress);
-
             let data = '';
             req.on('data', chunk => { data += chunk; })
               .on('end', () => {
+
+                if (headers[":status"] !== 200) {
+                  nrErrors++;
+                  console.log("ERR", data);
+                }
+                ////////////////////////
+                // TODO: 
+                // 1. fetch errors
+                // 2. test with round robin list of networks (localAddress) to get max trhoughput. Make this command-param
+                // 3. actually log MB/sec
+                // 4. stat nr 1/2/3/4/5 per opportunity
+                //   - also. If [10-20]ms -> For each: how often would we be 1/2/3/4/5 (distribition + avg)
+                // 
+                // Stats: 
+                // 15 MS for depthbook (network roundtrip)
+                // 1MS for CPU
+                // 3MS to place order (network 1 way)
 
                 const endHR = process.hrtime(start);
 
