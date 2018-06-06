@@ -88,7 +88,7 @@ function latency(url, n, sleepMs, keepAlive) {
       const median = sortedTimes[Math.ceil(sortedTimes.length / 2)];
 
       console.log("#########################");
-      console.log('Url:', results.url)
+      console.log('Url:', argv.url)
       console.log('Request count:', results.count)
       console.log('Average:', results.mean)
       console.log("Median", median)
