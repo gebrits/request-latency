@@ -25,7 +25,7 @@ if (argv.single) {
   latency(argv.url, +argv.n || 50, +argv.sleep || 30, argv.keepAlive == "true");
 }
 
-const timingParams = ["timingStart", "timingPhases", "elapsedTime"]; //"timings" = accumulated timingPhases
+const timingParams = ["timingStart", "timingPhases"]; //"timings" = accumulated timingPhases
 
 function latency(url, n, sleepMs, keepAlive) {
 
@@ -50,7 +50,7 @@ function latency(url, n, sleepMs, keepAlive) {
             const stop = new Date().getTime();
 
             const timings = _.pick(resp, timingParams);
-            times.push(timings.elapsedTime);
+            times.push(timings.timingPhases.total);
 
             console.log("##############");
             console.log(timings);
