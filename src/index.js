@@ -33,6 +33,7 @@ function latency(url, n, sleepMs, keepAlive) {
 
   const times = []
 
+  let nrErrors = 0;
   new Promise((resolve, reject) => {
 
       let counterDone = 0;
@@ -47,13 +48,18 @@ function latency(url, n, sleepMs, keepAlive) {
             forever: keepAlive
           }, (err, resp, body) => {
 
-            const stop = new Date().getTime();
+            if (err || resp.statusCode !== 200) {
 
-            const timings = _.pick(resp, timingParams);
-            times.push(timings.timingPhases.total);
+              nrErrors++;
 
-            console.log("##############");
-            console.log(timings);
+            } else {
+
+              const timings = _.pick(resp, timingParams);
+              times.push(timings.timingPhases.total);
+
+              console.log("##############");
+              console.log(timings);
+            }
 
             if (++counterDone === n) {
 
@@ -93,6 +99,7 @@ function latency(url, n, sleepMs, keepAlive) {
       console.log('10th percentile:', results.p10)
       console.log('95th percentile:', results.p95)
       console.log('99th percentile:', results.p99)
+      console.log("errors", nrErrors)
     })
 }
 
