@@ -2,8 +2,8 @@
  * Imports
  */
 
-require('http').globalAgent.maxSockets = Infinity;
-require('https').globalAgent.maxSockets = Infinity;
+require('http').globalAgent.maxSockets = 10;
+require('https').globalAgent.maxSockets = 10;
 
 const sd = require('stdev')
 const sleep = require('@f/sleep')
