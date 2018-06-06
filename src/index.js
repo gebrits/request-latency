@@ -22,7 +22,7 @@ if (!argv.url) {
 if (argv.single) {
   oneReq(argv.url);
 } else {
-  latency(argv.url, +argv.n || 50, +argv.sleep || 30, argv.keepAlive == "true");
+  latency(argv.url, +argv.n || 50, +argv.sleep || 50, argv.keepAlive == "true");
 }
 
 const timingParams = ["timingStart", "timingPhases"]; //"timings" = accumulated timingPhases
