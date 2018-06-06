@@ -47,9 +47,6 @@ function latency(url, n, sleepMs, keepAlive) {
           const req = client.request({ ':path': url.path });
           req.on('response', (headers, flags) => {
 
-            console.log("HEADERS", headers);
-            console.log("FLAGS", flags);
-
             let data = '';
             req.on('data', chunk => { data += chunk; })
               .on('end', () => {
