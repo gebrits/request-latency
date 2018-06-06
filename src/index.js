@@ -42,7 +42,7 @@ function latency(url, n, sleepMs, keepAlive) {
 
         setTimeout(() => {
 
-          request2({
+          request({
             url: url,
             time: true,
             forever: keepAlive
