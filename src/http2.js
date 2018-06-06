@@ -78,10 +78,12 @@ function latency(url, n, sleepMs, keepAlive) {
                 //as this doesn't change the staleness of the data.
                 const now = new Date().getTime();
                 const nowOnServer = JSON.parse(data).serverTime;
+                const stalenessInMS = now - nowOnServer;
 
-                console.log("took (ms)", tookMS, now - nowOnServer);
+                console.log("took (ms)", tookMS, stalenessInMS);
 
-                times.push(tookMS);
+                // times.push(tookMS);
+                times.push(stalenessInMS);
 
                 if (++counterDone === n) {
                   client.destroy(); // try remove this line see what changed?
