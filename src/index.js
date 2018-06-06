@@ -6,7 +6,6 @@ require('http').globalAgent.maxSockets = Infinity;
 require('https').globalAgent.maxSockets = Infinity;
 
 const sd = require('stdev')
-const elapsed = require('@f/elapsed-time')
 const request = require('request');
 const _ = require("lodash");
 const argv = require("yargs").argv;
