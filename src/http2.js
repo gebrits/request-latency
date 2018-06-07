@@ -36,6 +36,9 @@ function latency(url, n, sleepMs, keepAlive) {
 
       let counterDone = 0;
 
+      const startProcess = process.hrtime();
+      let lastTimingPrev = 0;
+
       for (var i = 0; i < n; i++) {
 
         setTimeout(() => {
@@ -55,7 +58,7 @@ function latency(url, n, sleepMs, keepAlive) {
                 }
                 ////////////////////////
                 // TODO: 
-                // 1. fetch errors
+                // 1. fetch errors (does request have error endpoint? Or are all http-status codes just non-errors, and are socket errors handled on client instead as request? As already done)
                 // 2. test with round robin list of networks (localAddress) to get max trhoughput. Make this command-param
                 // 3. actually log MB/sec
                 // 4. stat nr 1/2/3/4/5 per opportunity
@@ -64,14 +67,18 @@ function latency(url, n, sleepMs, keepAlive) {
                 //   - logical to use the time endpoint.
                 //   -> assuming time is the same (make sure to sync our time with AWS atomic clock): 
                 //   -> (client time on receive - time displayed) = stalesness lag.
+                //   
+                // 6. fetch orders which have timestamp to get a distribution of actual lag, including the xms (5ms) we keep between requests. 
+                // This should on average be 2.5ms + the avg staleness we see on timing-endpoint (7ms) + perhaps 1ms for extra processing / download => ~10ms
+                // 10ms + 1ms processing + 2ms setting order -> 13ms => sounds good
                 // 
-                // Stats: 
-                // 15 MS for depthbook (network roundtrip)
-                // 1MS for CPU
-                // 3MS to place order (network 1 way)
 
-                const endHR = process.hrtime(start);
-                const tookMS = Math.round(((endHR[0] * 10 ^ 9) + endHR[1]) / 1000000); //from nano to milli 
+                const deltaHR = process.hrtime(start);
+                const deltaSinceProcess = process.hrtime(startProcess);
+                const tookMS = Math.round(((deltaHR[0] * 10 ^ 9) + deltaHR[1]) / 1000000); //from nano to milli 
+                const lastTimingNow = Math.round(((deltaSinceProcess[0] * 10 ^ 9) + deltaSinceProcess[1]) / 1000000); //from nano to milli 
+                const timeSinceLast = lastTimingNow - lastTimingPrev;
+                lastTimingPrev = lastTimingNow;
 
                 //Assuming both servers are synced, the time response received at client - time reported on server at time of processing => staleness of data in millis
                 //This is a far better measure of checking how accurate the data is. In fact we don't care much how long the request takes before it's being processed by the binance-servers
@@ -80,7 +87,7 @@ function latency(url, n, sleepMs, keepAlive) {
                 const nowOnServer = JSON.parse(data).serverTime;
                 const stalenessInMS = now - nowOnServer;
 
-                console.log("took (ms)", tookMS, stalenessInMS);
+                console.log(`Roundtrip (with setup): ${tookMS} / Staleness: ${stalenessInMS} / Since last: ${timeSinceLast}`);
 
                 // times.push(tookMS);
                 times.push(stalenessInMS);
