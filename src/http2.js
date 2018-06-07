@@ -143,7 +143,7 @@ function latency(url, n, sleepMs, keepAlive) {
       console.log("errors", nrErrors)
 
       _.each(stats, (results, k) => {
-        console.log("#########################");
+        console.log("\n#########################");
         console.log(k.toUpperCase());
 
         const sortedTimes = results.times.sort();
