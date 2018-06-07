@@ -89,7 +89,7 @@ function latency(url, n, sleepMs, keepAlive) {
                 const nowOnServer = JSON.parse(data).serverTime;
                 const stalenessInMS = now - nowOnServer;
 
-                console.log(`Roundtrip (with setup): ${tookMS} / Staleness: ${stalenessInMS} / Since last: ${timeSinceLast}`);
+                console.log(`Roundtrip (with setup): ${("" + tookMS).padStart(3, "0")} / Staleness: ${("" + stalenessInMS).padStart(3, "0")} / Since last: ${("" + timeSinceLast).padStart(3, "0")}`);
 
                 // times.push(tookMS);
                 times.push(stalenessInMS);
