@@ -114,7 +114,7 @@ function latency(url, n, sleepMs, keepAlive) {
 
                     return {
                       url,
-                      count: n,
+                      count: times.length, //may be errors which don't count to total
                       times,
                       mean: mu,
                       sd: sigma,
