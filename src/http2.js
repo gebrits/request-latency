@@ -59,47 +59,49 @@ function latency(url, n, sleepMs, keepAlive) {
                 if (headers[":status"] !== 200) {
                   nrErrors++;
                   console.log("ERR", data);
+                } else {
+
+                  ////////////////////////
+                  // TODO: 
+                  // 1. fetch errors (does request have error endpoint? Or are all http-status codes just non-errors, and are socket errors handled on client instead as request? As already done)
+                  // 2. test with round robin list of networks (localAddress) to get max trhoughput. Make this command-param
+                  // 3. actually log MB/sec
+                  // 
+                  // 4. stat nr 1/2/3/4/5 per opportunity in ms
+                  //   - also. If [10-20]ms -> For each: how often would we be 1/2/3/4/5 (distribition + avg)
+                  // 5. actually get responses that got some time in them so we might deduce what the actual lag is instead of purely going from the 15ms
+                  //   - logical to use the time endpoint.
+                  //   -> assuming time is the same (make sure to sync our time with AWS atomic clock): 
+                  //   -> (client time on receive - time displayed) = stalesness lag.
+                  //   
+                  // 6. fetch orders which have timestamp to get a distribution of actual lag, including the xms (5ms) we keep between requests. 
+                  // This should on average be 2.5ms + the avg staleness we see on timing-endpoint (7ms) + perhaps 1ms for extra processing / download => ~10ms
+                  // 10ms + 1ms processing + 2ms setting order -> 13ms => sounds good
+                  // 
+
+                  const deltaHR = process.hrtime(start);
+                  const deltaSinceProcess = process.hrtime(startProcess);
+
+                  const tookMS = Math.round(((deltaHR[0] * Math.pow(10, 9)) + deltaHR[1]) / 1000000); //from nano to milli 
+                  const lastTimingNow = Math.round(((deltaSinceProcess[0] * Math.pow(10, 9)) + deltaSinceProcess[1]) / 1000000); //from nano to milli 
+
+                  const timeSinceLast = lastTimingNow - lastTimingPrev;
+                  lastTimingPrev = lastTimingNow;
+
+                  //Assuming both servers are synced, the time response received at client - time reported on server at time of processing => staleness of data in millis
+                  //This is a far better measure of checking how accurate the data is. In fact we don't care much how long the request takes before it's being processed by the binance-servers
+                  //as this doesn't change the staleness of the data.
+                  const now = new Date().getTime();
+                  const nowOnServer = JSON.parse(data).serverTime;
+                  const stalenessInMS = now - nowOnServer;
+
+                  console.log(`Roundtrip (with setup): ${("" + tookMS).padStart(4, "0")} / Staleness: ${("" + stalenessInMS).padStart(3, "0")} / Since last: ${("" + timeSinceLast).padStart(3, "0")}`);
+
+                  timings.roundtrip.push(tookMS);
+                  timings.staleness.push(stalenessInMS);
+                  timings.sinceLast.push(timeSinceLast);
+
                 }
-                ////////////////////////
-                // TODO: 
-                // 0. do stats for all 3 features (roundtrip / staleness / since last)
-                // 1. fetch errors (does request have error endpoint? Or are all http-status codes just non-errors, and are socket errors handled on client instead as request? As already done)
-                // 2. test with round robin list of networks (localAddress) to get max trhoughput. Make this command-param
-                // 3. actually log MB/sec
-                // 
-                // 4. stat nr 1/2/3/4/5 per opportunity in ms
-                //   - also. If [10-20]ms -> For each: how often would we be 1/2/3/4/5 (distribition + avg)
-                // 5. actually get responses that got some time in them so we might deduce what the actual lag is instead of purely going from the 15ms
-                //   - logical to use the time endpoint.
-                //   -> assuming time is the same (make sure to sync our time with AWS atomic clock): 
-                //   -> (client time on receive - time displayed) = stalesness lag.
-                //   
-                // 6. fetch orders which have timestamp to get a distribution of actual lag, including the xms (5ms) we keep between requests. 
-                // This should on average be 2.5ms + the avg staleness we see on timing-endpoint (7ms) + perhaps 1ms for extra processing / download => ~10ms
-                // 10ms + 1ms processing + 2ms setting order -> 13ms => sounds good
-                // 
-
-                const deltaHR = process.hrtime(start);
-                const deltaSinceProcess = process.hrtime(startProcess);
-
-                const tookMS = Math.round(((deltaHR[0] * Math.pow(10, 9)) + deltaHR[1]) / 1000000); //from nano to milli 
-                const lastTimingNow = Math.round(((deltaSinceProcess[0] * Math.pow(10, 9)) + deltaSinceProcess[1]) / 1000000); //from nano to milli 
-
-                const timeSinceLast = lastTimingNow - lastTimingPrev;
-                lastTimingPrev = lastTimingNow;
-
-                //Assuming both servers are synced, the time response received at client - time reported on server at time of processing => staleness of data in millis
-                //This is a far better measure of checking how accurate the data is. In fact we don't care much how long the request takes before it's being processed by the binance-servers
-                //as this doesn't change the staleness of the data.
-                const now = new Date().getTime();
-                const nowOnServer = JSON.parse(data).serverTime;
-                const stalenessInMS = now - nowOnServer;
-
-                console.log(`Roundtrip (with setup): ${("" + tookMS).padStart(4, "0")} / Staleness: ${("" + stalenessInMS).padStart(3, "0")} / Since last: ${("" + timeSinceLast).padStart(3, "0")}`);
-
-                timings.roundtrip.push(tookMS);
-                timings.staleness.push(stalenessInMS);
-                timings.sinceLast.push(timeSinceLast);
 
                 if (++counterDone === n) {
 
