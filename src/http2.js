@@ -29,7 +29,11 @@ function latency(url, n, sleepMs, keepAlive) {
   });
   client.on('error', (err) => console.error(err));
 
-  const times = []
+  const timings = {
+    roundtrip: [],
+    staleness: [],
+    sinceLast: []
+  }
 
   let nrErrors = 0;
   new Promise((resolve, reject) => {
@@ -58,10 +62,12 @@ function latency(url, n, sleepMs, keepAlive) {
                 }
                 ////////////////////////
                 // TODO: 
+                // 0. do stats for all 3 features (roundtrip / staleness / since last)
                 // 1. fetch errors (does request have error endpoint? Or are all http-status codes just non-errors, and are socket errors handled on client instead as request? As already done)
                 // 2. test with round robin list of networks (localAddress) to get max trhoughput. Make this command-param
                 // 3. actually log MB/sec
-                // 4. stat nr 1/2/3/4/5 per opportunity
+                // 
+                // 4. stat nr 1/2/3/4/5 per opportunity in ms
                 //   - also. If [10-20]ms -> For each: how often would we be 1/2/3/4/5 (distribition + avg)
                 // 5. actually get responses that got some time in them so we might deduce what the actual lag is instead of purely going from the 15ms
                 //   - logical to use the time endpoint.
@@ -91,25 +97,36 @@ function latency(url, n, sleepMs, keepAlive) {
 
                 console.log(`Roundtrip (with setup): ${("" + tookMS).padStart(4, "0")} / Staleness: ${("" + stalenessInMS).padStart(3, "0")} / Since last: ${("" + timeSinceLast).padStart(3, "0")}`);
 
-                // times.push(tookMS);
-                times.push(stalenessInMS);
+                timings.roundtrip.push(tookMS);
+                timings.staleness.push(stalenessInMS);
+                timings.sinceLast.push(timeSinceLast);
 
                 if (++counterDone === n) {
+
+                  //TODO: multiple destroy
                   client.destroy(); // try remove this line see what changed?
 
-                  const sigma = sd(times)
-                  const mu = mean(times)
+                  function createStats(times) {
+                    const sigma = sd(times)
+                    const mu = mean(times)
+
+                    return {
+                      url,
+                      count: n,
+                      times,
+                      mean: mu,
+                      sd: sigma,
+                      p10: p10(mu, sigma),
+                      p50: p50(mu, sigma),
+                      p95: p95(mu, sigma),
+                      p99: p99(mu, sigma)
+                    }
+                  }
 
                   resolve({
-                    url,
-                    count: n,
-                    times,
-                    mean: mu,
-                    sd: sigma,
-                    p10: p10(mu, sigma),
-                    p50: p50(mu, sigma),
-                    p95: p95(mu, sigma),
-                    p99: p99(mu, sigma)
+                    roundtrip: createStats(timings.roundtrip),
+                    staleness: createStats(timings.staleness),
+                    sinceLast: createStats(timings.sinceLast),
                   });
                 }
               });
@@ -119,21 +136,31 @@ function latency(url, n, sleepMs, keepAlive) {
 
       }
     })
-    .then(results => {
-
-      const sortedTimes = times.sort();
-      const median = sortedTimes[Math.ceil(sortedTimes.length / 2)];
+    .then(stats => {
 
       console.log("#########################");
       console.log('Url:', argv.url)
-      console.log('Request count:', results.count)
-      console.log('Average:', results.mean)
-      console.log("Median", median)
-      console.log('Standard deviation:', results.sd)
-      console.log('10th percentile:', results.p10)
-      console.log('95th percentile:', results.p95)
-      console.log('99th percentile:', results.p99)
       console.log("errors", nrErrors)
+
+      _.each(stats, (results, k) => {
+        console.log("#########################");
+        console.log(k.toUpperCase());
+
+        const sortedTimes = results.times.sort();
+        const median = sortedTimes[Math.ceil(sortedTimes.length / 2)];
+        console.log('Request count:', results.count)
+        console.log('Average:', results.mean)
+        console.log("Median", median)
+        console.log('Standard deviation:', results.sd)
+        console.log('10th percentile:', results.p10)
+        console.log('95th percentile:', results.p95)
+        console.log('99th percentile:', results.p99)
+
+      });
+
+    })
+    .catch(err => {
+      console.log("err", err);
     })
 }
 
