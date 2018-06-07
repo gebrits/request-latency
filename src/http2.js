@@ -75,8 +75,10 @@ function latency(url, n, sleepMs, keepAlive) {
 
                 const deltaHR = process.hrtime(start);
                 const deltaSinceProcess = process.hrtime(startProcess);
-                const tookMS = Math.round(((deltaHR[0] * 10 ^ 9) + deltaHR[1]) / 1000000); //from nano to milli 
-                const lastTimingNow = Math.round(((deltaSinceProcess[0] * 10 ^ 9) + deltaSinceProcess[1]) / 1000000); //from nano to milli 
+
+                const tookMS = Math.round(((deltaHR[0] * Math.pow(10, 9)) + deltaHR[1]) / 1000000); //from nano to milli 
+                const lastTimingNow = Math.round(((deltaSinceProcess[0] * Math.pow(10, 9)) + deltaSinceProcess[1]) / 1000000); //from nano to milli 
+
                 const timeSinceLast = lastTimingNow - lastTimingPrev;
                 lastTimingPrev = lastTimingNow;
 
