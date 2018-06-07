@@ -18,16 +18,25 @@ if (!url.host) {
   throw new Error("--url is required and should be a valid Url")
 }
 
+if (!argv.network) {
+  throw new Error("--network is required. E.g.: 'dev', 'vultr', 'ec2")
+}
+
+const networkConfig = require(`./networkConfig/${argv.network}`);
+
 latency(url, +argv.n || 50, +argv.sleep || 50, argv.keepAlive == "true");
 
 function latency(url, n, sleepMs, keepAlive) {
 
   console.log(`url = ${url} / n = ${n} / sleep = ${sleepMs} / keepAlive = ${keepAlive}`);
 
-  const client = http2.connect(`${url.protocol}//${url.host}`, {
-    // localAddress: "192.168.178.150" //YEAH
-  });
-  client.on('error', (err) => console.error(err));
+  const clients = _.map(networkConfig, localAddress => {
+    const client = http2.connect(`${url.protocol}//${url.host}`, { localAddress });
+    client.on('error', (err) => console.error(err));
+    return client;
+  })
+  const nrClients = clients.length;
+  let curClient = 0;
 
   const timings = {
     roundtrip: [],
@@ -48,6 +57,7 @@ function latency(url, n, sleepMs, keepAlive) {
         setTimeout(() => {
 
           const start = process.hrtime();
+          const client = clients[curClient++ % nrClients]; //round-robin selection of client
 
           const req = client.request({ ':path': url.path });
           req.on('response', (headers, flags) => {
@@ -105,8 +115,8 @@ function latency(url, n, sleepMs, keepAlive) {
 
                 if (++counterDone === n) {
 
-                  //TODO: multiple destroy
-                  client.destroy(); // try remove this line see what changed?
+                  //destroy clients
+                  _.each(clients, client => client.destroy());
 
                   function createStats(times) {
                     const sigma = sd(times)
