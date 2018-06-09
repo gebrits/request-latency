@@ -30,11 +30,27 @@ function latency(url, n, sleepMs, keepAlive) {
 
   console.log(`url = ${url} / n = ${n} / sleep = ${sleepMs} / keepAlive = ${keepAlive}`);
 
-  const clients = _.map(networkConfig, localAddress => {
-    const client = http2.connect(`${url.protocol}//${url.host}`, { localAddress });
+  let clients;
+
+  if (argv.singleClient) {
+
+    console.log("using a single client");
+
+    const client = http2.connect(`${url.protocol}//${url.host}`);
     client.on('error', (err) => console.error(err));
-    return client;
-  })
+
+    clients = [client];
+
+  } else {
+    clients = _.map(networkConfig, localAddress => {
+      const client = http2.connect(`${url.protocol}//${url.host}`, { localAddress });
+      client.on('error', (err) => console.error(err));
+      return client;
+    })
+  }
+
+
+
   const nrClients = clients.length;
   let curClient = 0;
 
