@@ -5,6 +5,7 @@
 require('http').globalAgent.maxSockets = Infinity;
 require('https').globalAgent.maxSockets = Infinity;
 
+const dns = require('dns');
 const http2 = require('http2');
 const sd = require('stdev')
 const request = require('request');
@@ -37,7 +38,7 @@ function latency(url, n, sleepMs, keepAlive) {
 
     client.on('remoteSettings', (settings) => {
       console.log("TODO: remoteSettings. Can this be used to optimize anything?", settings);
-      console.log("localAddress", client.socket.localAddress, { family: 6 });
+      console.log("localAddress", client.socket.localAddress);
     });
   }
 
@@ -45,14 +46,14 @@ function latency(url, n, sleepMs, keepAlive) {
 
     console.log("using a single client");
 
-    const client = http2.connect(`${url.protocol}//${url.host}`);
+    const client = http2.connect(`${url.protocol}//${url.host}`, { family: 6, hints: dns.ADDRCONFIG | dns.V4MAPPED });
     attachListeners(client);
 
     clients = [client];
 
   } else {
     clients = _.map(networkConfig, localAddress => {
-      const client = http2.connect(`${url.protocol}//${url.host}`, { localAddress, family: 6 });
+      const client = http2.connect(`${url.protocol}//${url.host}`, { localAddress, family: 6, hints: dns.ADDRCONFIG | dns.V4MAPPED });
       attachListeners(client);
       return client;
     })
