@@ -32,24 +32,28 @@ function latency(url, n, sleepMs, keepAlive) {
 
   let clients;
 
-  if (argv.singleClient) {
-
-    console.log("using a single client");
-
-    const client = http2.connect(`${url.protocol}//${url.host}`);
+  function attachListeners(client) {
     client.on('error', (err) => console.error(err));
 
     client.on('remoteSettings', (settings) => {
       console.log("TODO: remoteSettings. Can this be used to optimize anything?", settings);
       console.log("localAddress", client.socket.localAddress, { family: 6 });
     });
+  }
+
+  if (argv.singleClient) {
+
+    console.log("using a single client");
+
+    const client = http2.connect(`${url.protocol}//${url.host}`);
+    attachListeners(client);
 
     clients = [client];
 
   } else {
     clients = _.map(networkConfig, localAddress => {
       const client = http2.connect(`${url.protocol}//${url.host}`, { localAddress, family: 6 });
-      client.on('error', (err) => console.error(err));
+      attachListeners(client);
       return client;
     })
   }
