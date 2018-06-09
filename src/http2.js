@@ -39,6 +39,11 @@ function latency(url, n, sleepMs, keepAlive) {
     const client = http2.connect(`${url.protocol}//${url.host}`);
     client.on('error', (err) => console.error(err));
 
+    client.on('remoteSettings', (settings) => {
+      console.log("TODO: remoteSettings. Can this be used to optimize anything?", settings);
+      console.log("localAddress", client.socket.localAddress);
+    });
+
     clients = [client];
 
   } else {
