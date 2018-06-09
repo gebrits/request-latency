@@ -48,7 +48,7 @@ function latency(url, n, sleepMs, keepAlive) {
 
   } else {
     clients = _.map(networkConfig, localAddress => {
-      const client = http2.connect(`${url.protocol}//${url.host}`, { localAddress });
+      const client = http2.connect(`${url.protocol}//${url.host}`, { localAddress, family: 6 });
       client.on('error', (err) => console.error(err));
       return client;
     })
