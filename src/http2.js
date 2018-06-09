@@ -41,7 +41,7 @@ function latency(url, n, sleepMs, keepAlive) {
 
     client.on('remoteSettings', (settings) => {
       console.log("TODO: remoteSettings. Can this be used to optimize anything?", settings);
-      console.log("localAddress", client.socket.localAddress);
+      console.log("localAddress", client.socket.localAddress, { family: 6 });
     });
 
     clients = [client];
