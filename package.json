@@ -9,7 +9,9 @@
     "latency": "bin/latency.js"
   },
   "dependencies": {
+    "bluebird": "^3.5.1",
     "lodash": "^4.17.10",
+    "redis": "^2.8.0",
     "request": "^2.87.0",
     "request-promise": "^4.2.2",
     "stdev": "0.0.1",
