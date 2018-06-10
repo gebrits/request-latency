@@ -23,17 +23,18 @@ function fetch(fromId = '$') {
       return redisClient.send_commandAsync("xread", readCommandProto.concat(fromId))
         .then(res => {
 
+          throw new Error("test");
+
           //res[0][0] -> streamName
           //res[0][1] -> array
 
           let lastId = null;
 
-          console.log("##############");
           _.each(res[0][1], event => {
             const id = event[0].toString();
-            const k = event[1][0].toString();
+            // const k = event[1][0].toString();
             const payload = JSON.parse(event[1][1].toString());
-            console.log("READ", id);
+            console.log(payload);
             lastId = id;
           });
 
@@ -46,20 +47,8 @@ function fetch(fromId = '$') {
     .catch(err => {
       console.log("probably start over again from '$'");
       console.log("err", err);
+      throw err;
+
     })
 
 }
-
-
-
-//https://redis.io/topics/streams-intro
-//Note that in the example above, other than removing COUNT, 
-//I specified the new BLOCK option with a timeout of 0 milliseconds (that means to never timeout). 
-//Moreover, instead of passing a normal ID for the stream mystream I passed the special ID $. 
-//This special ID means that XREAD should use as last ID the maximum ID already stored in the stream mystream, 
-//so that we will receive only new messages, starting from the time we started listening. 
-//This is similar to the tail -f Unix command in some way.
-
-//XREAD BLOCK 0 STREAMS mystream $
-
-//XADD mystream * sensor - id 1234 temperature 19.8
