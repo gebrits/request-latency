@@ -1,6 +1,7 @@
 const _ = require("lodash");
 const redis = require('redis');
 const Promise = require("bluebird");
+const sd = require('stdev')
 
 const config = require("./config");
 
@@ -21,7 +22,6 @@ const timings = {
   stalenessIncl: [],
   sinceLast: []
 }
-
 
 fetch();
 
@@ -76,6 +76,75 @@ function fetch(fromId = '$') {
 
       fetch(fromId); //start again from fromId
     })
+}
+
+setInterval(() => stats(), 1000);
+
+function statsPerFeature(times) {
+  const sigma = sd(times)
+  const mu = mean(times)
+
+  return {
+    count: times.length, //may be errors which don't count to total
+    times,
+    mean: mu,
+    sd: sigma,
+    p10: p10(mu, sigma),
+    p50: p50(mu, sigma),
+    p95: p95(mu, sigma),
+    p99: p99(mu, sigma)
+  }
+}
+
+function stats() {
+  console.log("######################################");
+  console.log("######################################");
+  _.each(timings, (feature, k) => {
+    console.log("#########################");
+    console.log(k.toUpperCase());
+
+    const results = statsPerFeature(feature);
+    const sortedTimes = results.times.sort();
+    const median = sortedTimes[Math.ceil(sortedTimes.length / 2)]; //can be zero when latency is high, since then we batch-consume
+    console.log('Request count:', results.count)
+    console.log('Average:', results.mean)
+    console.log("Median", median)
+    console.log('Standard deviation:', results.sd)
+    console.log('10th percentile:', results.p10)
+    console.log('95th percentile:', results.p95)
+    console.log('99th percentile:', results.p99)
+  });
+}
 
 
+/**
+ * Helpers
+ */
+
+function mean(list) {
+  return list.reduce((acc, item) => acc + item, 0) / list.length
+}
+
+function p50(mu, sigma) {
+  const z = 0
+  return percentile(z, mu, sigma)
+}
+
+function p10(mu, sigma) {
+  const z = -1.28155
+  return percentile(z, mu, sigma)
+}
+
+function p95(mu, sigma) {
+  const z = 1.645
+  return percentile(z, mu, sigma)
+}
+
+function p99(mu, sigma) {
+  const z = 2.326
+  return percentile(z, mu, sigma)
+}
+
+function percentile(z, mu, sigma) {
+  return z * sigma + mu
 }

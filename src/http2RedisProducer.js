@@ -15,7 +15,6 @@ Promise.promisifyAll(redis);
 
 const redisClient = redis.createClient(config.redis);
 
-
 const n = +argv.n || 50;
 const sleepMs = +argv.sleep || 50;
 const urlAsString = "https://api.binance.com/api/v1/time";
