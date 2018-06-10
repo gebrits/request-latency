@@ -2,15 +2,11 @@ const _ = require("lodash");
 const redis = require('redis');
 const Promise = require("bluebird");
 
+const config = require("./config");
+
 Promise.promisifyAll(redis);
 
-const redisClient = redis.createClient({
-  port: 6379,
-  host: '13.113.183.3', // Redis host
-  family: 4,
-  password: 'DAskjdaSAd89438S*AD%^D32SAD$#@#!LAKDk)(&$#@!',
-  db: 0
-})
+const redisClient = redis.createClient(config.redis);
 
 const readCommandProto = "BLOCK 0 COUNT 10 STREAMS binanceTiming".split(" ");
 

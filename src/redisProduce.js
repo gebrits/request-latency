@@ -2,15 +2,11 @@ const Promise = require("bluebird");
 const redis = require('redis');
 const _ = require("lodash");
 
+const config = require("./config");
+
 Promise.promisifyAll(redis);
 
-const client = redis.createClient({
-  port: 6379,
-  host: '13.113.183.3', // Redis host
-  family: 4,
-  password: 'DAskjdaSAd89438S*AD%^D32SAD$#@#!LAKDk)(&$#@!',
-  db: 0
-})
+const redisClient = redis.createClient(config.redis);
 
 //maximize to about 1000
 const addCommandProto = "mystream MAXLEN ~ 1000 *".split(" ");

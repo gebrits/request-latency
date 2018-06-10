@@ -10,7 +10,9 @@
   },
   "dependencies": {
     "bluebird": "^3.5.1",
+    "deasync": "^0.1.13",
     "lodash": "^4.17.10",
+    "public-ip": "^2.4.0",
     "redis": "^2.8.0",
     "request": "^2.87.0",
     "request-promise": "^4.2.2",
